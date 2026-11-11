@@ -1,0 +1,6 @@
+{
+  "name": "Amul Parlour Khodana - ઓનલાઇન ઓર્ડરિંગ",
+  "description": "અમૂલ પાર્લર ખોડાણા (દૂધ મંડળી દ્વારા સંચાલિત) - દૂધ, આઈસ્ક્રીમ, ઘી, પનીર, બટર અને ડેરી પ્રોડક્ટ્સ ઓર્ડર કરો અને દુકાનેથી મેળવો. WhatsApp: 8849526589",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

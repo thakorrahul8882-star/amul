@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "Category": {
+      "title": "Category",
+      "description": "Amul product category item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "nameGu": { "type": "string", "maxLength": 100 },
+        "nameEn": { "type": "string", "maxLength": 100 },
+        "slug": { "type": "string", "maxLength": 100 },
+        "icon": { "type": "string", "maxLength": 50 },
+        "order": { "type": "number" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "nameGu", "nameEn", "slug", "isActive"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Amul dairy and food product",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 100 },
+        "nameGu": { "type": "string", "maxLength": 200 },
+        "nameEn": { "type": "string", "maxLength": 200 },
+        "categoryId": { "type": "string", "maxLength": 100 },
+        "categoryName": { "type": "string", "maxLength": 100 },
+        "descriptionGu": { "type": "string", "maxLength": 1000 },
+        "descriptionEn": { "type": "string", "maxLength": 1000 },
+        "sellingPrice": { "type": "number" },
+        "originalPrice": { "type": "number" },
+        "availableStock": { "type": "number" },
+        "isAvailable": { "type": "boolean" },
+        "isFeatured": { "type": "boolean" },
+        "isNew": { "type": "boolean" },
+        "unit": { "type": "string", "maxLength": 50 },
+        "imageUrl": { "type": "string", "maxLength": 200000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "nameGu", "nameEn", "categoryId", "sellingPrice", "availableStock", "isAvailable", "unit"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer pickup order for Amul Parlour Khodana",
+      "type": "object",
+      "properties": {
+        "orderId": { "type": "string", "maxLength": 50 },
+        "customerName": { "type": "string", "maxLength": 100 },
+        "customerMobile": { "type": "string", "maxLength": 15 },
+        "totalAmount": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["new", "accepted", "preparing", "ready_for_pickup", "completed", "cancelled"]
+        },
+        "paymentMethod": { "type": "string", "maxLength": 50 },
+        "orderNotes": { "type": "string", "maxLength": 500 },
+        "pickupLocation": { "type": "string", "maxLength": 200 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "whatsappNotificationStatus": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["orderId", "customerName", "customerMobile", "totalAmount", "status", "paymentMethod", "pickupLocation"]
+    },
+    "StoreSettings": {
+      "title": "StoreSettings",
+      "description": "Store configuration and operational details",
+      "type": "object",
+      "properties": {
+        "storeNameGu": { "type": "string", "maxLength": 150 },
+        "storeSubNameGu": { "type": "string", "maxLength": 150 },
+        "whatsappNumber": { "type": "string", "maxLength": 20 },
+        "addressGu": { "type": "string", "maxLength": 200 },
+        "isOpen": { "type": "boolean" },
+        "pickupNoticeGu": { "type": "string", "maxLength": 300 },
+        "pickupNoticeEn": { "type": "string", "maxLength": 300 },
+        "allowCounterCash": { "type": "boolean" },
+        "allowCounterUpi": { "type": "boolean" },
+        "whatsappApiPhoneNumberId": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["storeNameGu", "whatsappNumber", "isOpen", "pickupNoticeGu"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Admin authorization entry",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "maxLength": 150 },
+        "role": { "type": "string", "maxLength": 50 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/categories/{categoryId}": {
+      "schema": "Category",
+      "description": "Product categories list"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Amul products in store catalog"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Customer placed shop-pickup orders"
+    },
+    "/storeSettings/config": {
+      "schema": "StoreSettings",
+      "description": "Store contact and pickup notices configuration"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Authorized administrators"
+    }
+  }
+}

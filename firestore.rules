@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        request.auth.token.email == 'thakorrahul8882@gmail.com'
+      );
+    }
+
+    // Passcode validation for authenticated admin operations
+    function hasWritePasscode() {
+      return request.resource.data != null &&
+        'adminPasscode' in request.resource.data &&
+        request.resource.data.adminPasscode == 'Amul@8849';
+    }
+
+    function hasExistingPasscode() {
+      return resource.data != null &&
+        'adminPasscode' in resource.data &&
+        resource.data.adminPasscode == 'Amul@8849';
+    }
+
+    // Allows initial bootstrapping of default catalog when database is first created
+    function isUninitialized() {
+      return !exists(/databases/$(database)/documents/storeSettings/config);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Connection test rule
+    match /test/{docId} {
+      allow read: if true;
+    }
+
+    // Categories: public read, Admin write
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create: if isUninitialized() || isAdmin() || hasWritePasscode();
+      allow update: if isAdmin() || hasWritePasscode();
+      allow delete: if isAdmin() || hasExistingPasscode();
+    }
+
+    // Products: public read, Admin write, or customer checkout stock decrement
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isUninitialized() || isAdmin() || hasWritePasscode();
+      allow update: if isAdmin() || hasWritePasscode() || (
+        // Allow legitimate customer order to decrement stock safely
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['availableStock', 'updatedAt']) &&
+        request.resource.data.availableStock >= 0 &&
+        request.resource.data.availableStock < resource.data.availableStock
+      );
+      allow delete: if isAdmin() || hasExistingPasscode();
+    }
+
+    // Store settings: public read, Admin write
+    match /storeSettings/{docId} {
+      allow read: if true;
+      allow create: if isUninitialized() || isAdmin() || hasWritePasscode();
+      allow update: if isAdmin() || hasWritePasscode();
+      allow delete: if isAdmin() || hasExistingPasscode();
+    }
+
+    // Orders: Customer creation and status tracking by Order ID; Admin full access or status transitions
+    match /orders/{orderId} {
+      allow create: if true;
+      allow read: if true;
+      allow update: if isAdmin() || hasWritePasscode() || (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+      );
+      allow delete: if isAdmin() || hasExistingPasscode();
+    }
+
+    match /admins/{adminId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+  }
+}
