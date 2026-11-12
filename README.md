@@ -48,16 +48,19 @@ git push -u origin main
 
 ## 🌐 ફ્રી લાઇવ હોસ્ટિંગ (Free Web Hosting from GitHub)
 
-તમે આ પ્રોજેક્ટને તમારા GitHub રિપોઝીટરી સાથે જોડીને **૧ મિનિટમાં ફ્રી લાઇવ** કરી શકો છો:
+### ⚠️ વ્હાઇટ પેજ (White Page) કેમ દેખાય છે અને તેનો ઉકેલ:
+જ્યારે GitHub Pages પર ડિફોલ્ટ રૂપે "Deploy from a branch (root)" પસંદ કરેલું હોય ત્યારે બ્રાઉઝર TypeScript/React કોડ સીધો ચલાવી શકતું નથી જેથી સફેદ સ્ક્રીન (White Page) દેખાય છે. આના ઉકેલ માટે નીચેના ૨ રસ્તા છે:
 
-### ૧. Vercel પર હોસ્ટિંગ (સૌથી સરળ):
+#### રસ્તો ૧: GitHub Pages માં "GitHub Actions" પસંદ કરો (Free & Automatic)
+1. તમારી GitHub રિપોઝીટરીમાં ઉપર **Settings** પર જાઓ.
+2. ડાબી બાજુ મેનૂમાંથી **Pages** પર ક્લિક કરો.
+3. **Build and deployment** -> **Source** માં **"GitHub Actions"** પસંદ કરો (Deploy from a branch ની જગ્યાએ).
+4. બસ! અમે ઉમેરેલ વર્કફ્લો આપમેળે સાઇટ બિલ્ડ કરીને લાઇવ લિંક આપી દેશે. વ્હાઇટ પેજ નહીં આવે!
+
+#### રસ્તો ૨: Vercel પર હોસ્ટિંગ (સૌથી સરળ અને શ્રેષ્ઠ)
 1. [vercel.com](https://vercel.com) પર જઈ તમારા GitHub વડે લૉગિન કરો.
-2. **Add New Project** પર ક્લિક કરો અને તમારી `amul-parlour-khodana` રિપોઝીટરી પસંદ કરો.
+2. **Add New...** -> **Project** પર ક્લિક કરી `amul-parlour-khodana` રિપોઝીટરી સિલેક્ટ કરો.
 3. **Deploy** બટન દબાવો. Vercel આપમેળે બિલ્ડ કરીને લાઇવ લિંક આપી દેશે (જેમ કે `amul-parlour-khodana.vercel.app`).
-
-### ૨. Netlify પર હોસ્ટિંગ:
-1. [netlify.com](https://netlify.com) પર જાઓ.
-2. **Import from Git** -> **GitHub** પસંદ કરો.
 3. રિપોઝીટરી સિલેક્ટ કરી **Deploy** પર ક્લિક કરો.
 
 ---
