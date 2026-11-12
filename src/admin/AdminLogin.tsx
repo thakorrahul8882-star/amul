@@ -16,8 +16,8 @@ export const AdminLogin: React.FC<{ onBackToStore: () => void }> = ({
   onBackToStore,
 }) => {
   const { loginWithGoogle, loginWithEmail, error, clearError } = useAuth();
-  const [email, setEmail] = useState('thakorrahul8882@gmail.com');
-  const [password, setPassword] = useState('Amul@8849');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -122,7 +122,7 @@ export const AdminLogin: React.FC<{ onBackToStore: () => void }> = ({
               <span>Google એકાઉન્ટથી સાઇન ઇન કરો</span>
             </button>
             <p className="text-[11px] text-slate-400 text-center mt-2">
-              (અધિકૃત ઇમેઇલ: <span className="text-yellow-400">thakorrahul8882@gmail.com</span>)
+              (માત્ર અધિકૃત પાર્લર સંચાલક માટે)
             </p>
           </div>
 
@@ -134,19 +134,20 @@ export const AdminLogin: React.FC<{ onBackToStore: () => void }> = ({
           </div>
 
           {/* Email / Password Form */}
-          <form onSubmit={handleEmailLogin} className="space-y-4">
+          <form onSubmit={handleEmailLogin} className="space-y-4" autoComplete="off">
             <div>
               <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">
                 એડમિન ઇમેઇલ / યૂઝરનેમ
               </label>
               <div className="relative">
                 <input
-                  type="email"
+                  type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@amulkhodana.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent font-medium"
+                  autoComplete="off"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent font-medium"
                 />
                 <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
               </div>
@@ -162,7 +163,9 @@ export const AdminLogin: React.FC<{ onBackToStore: () => void }> = ({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent font-medium"
+                  placeholder="તમારો પાસવર્ડ દાખલ કરો"
+                  autoComplete="new-password"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent font-medium"
                 />
                 <Key className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
                 <button

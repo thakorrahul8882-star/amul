@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Product, Category } from '../types';
-import { saveProduct, deleteProduct } from '../services/storeService';
+import { saveProduct, deleteProduct, clearAllProductsFromFirestore } from '../services/storeService';
 import {
   Plus,
   Edit2,
@@ -98,6 +98,20 @@ export const AdminProductManagement: React.FC<Props> = ({
   const [isFeatured, setIsFeatured] = useState(false);
   const [isNew, setIsNew] = useState(false);
 
+  // In-app Delete Confirmation & Notification States (No window.confirm/alert for iframe safety)
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showClearAllModal, setShowClearAllModal] = useState(false);
+  const [isClearingAll, setIsClearingAll] = useState(false);
+  const [toast, setToast] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToast({ text, type });
+    setTimeout(() => {
+      setToast(null);
+    }, 4000);
+  };
+
   // Photo Upload States
   const [imageInputMode, setImageInputMode] = useState<'upload' | 'url'>('upload');
   const [isDragging, setIsDragging] = useState(false);
@@ -106,7 +120,7 @@ export const AdminProductManagement: React.FC<Props> = ({
 
   const handleProcessFile = async (file: File) => {
     if (!file.type.startsWith('image/')) {
-      alert('કૃપા કરીને માત્ર ફોટો ફાઇલ પસંદ કરો (JPG, PNG, WebP).');
+      showToast('કૃપા કરીને માત્ર ફોટો ફાઇલ પસંદ કરો (JPG, PNG, WebP).', 'error');
       return;
     }
     setIsCompressing(true);
@@ -115,7 +129,7 @@ export const AdminProductManagement: React.FC<Props> = ({
       setImageUrl(compressedDataUrl);
     } catch (err) {
       console.error('Image compression error:', err);
-      alert('ફોટો પ્રોસેસ કરવામાં ભૂલ આવી.');
+      showToast('ફોટો પ્રોસેસ કરવામાં ભૂલ આવી.', 'error');
     } finally {
       setIsCompressing(false);
     }
@@ -204,21 +218,41 @@ export const AdminProductManagement: React.FC<Props> = ({
 
       await saveProduct(prodData);
       setIsModalOpen(false);
+      showToast('પ્રોડક્ટ સફળતાપૂર્વક સાચવવામાં આવી છે!', 'success');
     } catch (err) {
       console.error('Failed to save product:', err);
-      alert('પ્રોડક્ટ સેવ કરવામાં ભૂલ આવી.');
+      showToast('પ્રોડક્ટ સેવ કરવામાં ભૂલ આવી.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!window.confirm(`શું તમે "${name}" પ્રોડક્ટ કાઢી નાખવા માંગો છો?`)) return;
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
     try {
-      await deleteProduct(id);
+      await deleteProduct(productToDelete.id);
+      showToast(`"${productToDelete.nameGu}" પ્રોડક્ટ સફળતાપૂર્વક ડિલીટ થઈ ગઈ છે.`, 'success');
+      setProductToDelete(null);
     } catch (err) {
       console.error('Failed to delete product:', err);
-      alert('પ્રોડક્ટ ડિલીટ કરવામાં ભૂલ આવી.');
+      showToast('પ્રોડક્ટ ડિલીટ કરવામાં ભૂલ આવી.', 'error');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const confirmClearAll = async () => {
+    setIsClearingAll(true);
+    try {
+      await clearAllProductsFromFirestore();
+      showToast('બધી પ્રોડક્ટ્સ સફળતાપૂર્વક હટાવી દેવામાં આવી છે. તમે હવે તમારી નવી પ્રોડક્ટ્સ ઉમેરી શકો છો.', 'success');
+      setShowClearAllModal(false);
+    } catch (err) {
+      console.error('Clear all error:', err);
+      showToast('પ્રોડક્ટ્સ હટાવવામાં ભૂલ આવી.', 'error');
+    } finally {
+      setIsClearingAll(false);
     }
   };
 
@@ -279,13 +313,27 @@ export const AdminProductManagement: React.FC<Props> = ({
           </select>
         </div>
 
-        <button
-          onClick={openAddModal}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95"
-        >
-          <Plus className="w-4 h-4" />
-          <span>નવી પ્રોડક્ટ ઉમેરો</span>
-        </button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {products.length > 0 && (
+            <button
+              onClick={() => setShowClearAllModal(true)}
+              disabled={loading || isClearingAll}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs rounded-xl border border-red-200 transition-colors"
+              title="બધી પ્રોડક્ટ્સ એક સાથે હટાવો"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>બધી પ્રોડક્ટ્સ ખાલી કરો</span>
+            </button>
+          )}
+
+          <button
+            onClick={openAddModal}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-95"
+          >
+            <Plus className="w-4 h-4" />
+            <span>નવી પ્રોડક્ટ ઉમેરો</span>
+          </button>
+        </div>
       </div>
 
       {/* Product Table */}
@@ -306,8 +354,31 @@ export const AdminProductManagement: React.FC<Props> = ({
             <tbody className="divide-y divide-slate-100 font-medium">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400">
-                    કોઈ પ્રોડક્ટ મળી નથી.
+                  <td colSpan={7} className="py-12 px-4 text-center">
+                    <div className="max-w-sm mx-auto space-y-3">
+                      <div className="w-12 h-12 bg-red-50 text-red-600 rounded-2xl mx-auto flex items-center justify-center">
+                        <Package className="w-6 h-6" />
+                      </div>
+                      <div className="font-extrabold text-slate-800 text-sm">
+                        {products.length === 0
+                          ? 'હાલમાં કોઈ પ્રોડક્ટ ઉમેરેલ નથી'
+                          : 'કોઈ પ્રોડક્ટ મળી નથી'}
+                      </div>
+                      <p className="text-[11px] text-slate-500 leading-relaxed">
+                        {products.length === 0
+                          ? 'તમામ ૧૨ કેટેગરીઓ ઉપલબ્ધ છે. તમારી નવી અમૂલ પ્રોડક્ટ્સ ઉમેરવા માટે "નવી પ્રોડક્ટ ઉમેરો" બટન પર ક્લિક કરો.'
+                          : 'તમે શોધેલી ફિલ્ટર મુજબ કોઈ પ્રોડક્ટ મળી નથી.'}
+                      </p>
+                      {products.length === 0 && (
+                        <button
+                          onClick={openAddModal}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold shadow-sm transition-transform active:scale-95"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>પ્રથમ પ્રોડક્ટ ઉમેરો</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ) : (
@@ -420,9 +491,9 @@ export const AdminProductManagement: React.FC<Props> = ({
                           <Edit2 className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => handleDelete(p.id, p.nameGu)}
-                          className="p-1.5 rounded-lg text-slate-600 hover:text-red-600 hover:bg-red-50"
-                          title="Delete"
+                          onClick={() => setProductToDelete(p)}
+                          className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors active:scale-95"
+                          title="પ્રોડક્ટ ડિલીટ કરો"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -805,6 +876,169 @@ export const AdminProductManagement: React.FC<Props> = ({
               </form>
 
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Delete Single Product Confirmation Modal (Iframe Safe) */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+          <div
+            onClick={() => !isDeleting && setProductToDelete(null)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+          />
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-2xl mx-auto flex items-center justify-center shadow-inner">
+                <Trash2 className="w-7 h-7" />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  પ્રોડક્ટ કાઢી નાખો (Delete Product)
+                </h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  શું તમે ખરેખર આ પ્રોડક્ટ સ્ટોરમાંથી ડિલીટ કરવા માંગો છો?
+                </p>
+              </div>
+
+              {/* Product Preview Card */}
+              <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-2xl border border-slate-200 text-left">
+                <img
+                  src={productToDelete.imageUrl}
+                  alt={productToDelete.nameEn}
+                  className="w-14 h-14 rounded-xl object-cover bg-white border border-slate-200 shrink-0"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src =
+                      'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=300&q=80';
+                  }}
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="font-bold text-slate-900 text-sm truncate">
+                    {productToDelete.nameGu}
+                  </div>
+                  <div className="text-xs text-slate-500 truncate">
+                    {productToDelete.nameEn} • {productToDelete.unit}
+                  </div>
+                  <div className="text-xs font-extrabold text-red-600 mt-0.5">
+                    ₹{productToDelete.sellingPrice}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setProductToDelete(null)}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  ના, રદ કરો (Cancel)
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDeleteProduct}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 font-bold text-xs text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>કાઢી રહ્યાં છીએ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>હા, કાઢી નાખો (Delete)</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* In-App Clear All Products Confirmation Modal (Iframe Safe) */}
+      {showClearAllModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center p-4">
+          <div
+            onClick={() => !isClearingAll && setShowClearAllModal(false)}
+            className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+          />
+          <div className="relative w-full max-w-md bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-150">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-14 h-14 bg-red-100 text-red-600 rounded-2xl mx-auto flex items-center justify-center shadow-inner">
+                <AlertCircle className="w-7 h-7" />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-extrabold text-slate-900">
+                  બધી પ્રોડક્ટ્સ ખાલી કરો (Clear All)
+                </h3>
+                <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                  શું તમે ખરેખર બધી ({products.length}) પ્રોડક્ટ્સ ડેટાબેઝમાંથી કાઢી નાખવા માંગો છો?
+                </p>
+                <div className="mt-2 p-2.5 bg-amber-50 border border-amber-200 rounded-xl text-[11px] text-amber-800 font-medium">
+                  ✓ તમામ ૧૨ કેટેગરીઓ સચવાયેલી રહેશે જેથી તમે તમારી પોતાની નવી પ્રોડક્ટ્સ ઉમેરી શકો.
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowClearAllModal(false)}
+                  disabled={isClearingAll}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-slate-300 font-bold text-xs text-slate-700 hover:bg-slate-50 transition-colors"
+                >
+                  રદ કરો (Cancel)
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmClearAll}
+                  disabled={isClearingAll}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 font-bold text-xs text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                >
+                  {isClearingAll ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>ખાલી થઈ રહ્યું છે...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-4 h-4" />
+                      <span>હા, બધી પ્રોડક્ટ્સ હટાવો</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Notification Toast */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm animate-in slide-in-from-bottom-5 duration-200">
+          <div
+            className={`flex items-center gap-3 px-4 py-3 rounded-2xl shadow-xl border text-xs font-bold ${
+              toast.type === 'success'
+                ? 'bg-slate-900 text-white border-slate-800'
+                : 'bg-red-600 text-white border-red-700'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-yellow-300 shrink-0" />
+            )}
+            <span className="flex-1">{toast.text}</span>
+            <button
+              onClick={() => setToast(null)}
+              className="text-white/60 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       )}

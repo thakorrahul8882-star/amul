@@ -388,6 +388,21 @@ export async function deleteProduct(productId: string): Promise<void> {
 }
 
 /**
+ * Admin: Clear All Products from Firestore
+ */
+export async function clearAllProductsFromFirestore(): Promise<void> {
+  try {
+    const snap = await getDocs(collection(db, PRODUCTS_COLLECTION));
+    for (const d of snap.docs) {
+      await deleteDoc(d.ref);
+    }
+    console.log('All products successfully cleared from Firestore.');
+  } catch (error) {
+    console.warn('Notice while clearing products from Firestore:', error);
+  }
+}
+
+/**
  * Admin: Add / Update Category
  */
 export async function saveCategory(category: Category): Promise<void> {

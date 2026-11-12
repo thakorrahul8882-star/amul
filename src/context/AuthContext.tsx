@@ -22,8 +22,9 @@ interface AuthContextType {
 }
 
 const AUTHORIZED_ADMIN_EMAILS = [
-  'thakorrahul8882@gmail.com',
   'admin@amulkhodana.com',
+  'admin',
+  'thakorrahul8882@gmail.com',
   'amulparlourkhodana@gmail.com',
 ];
 
@@ -121,11 +122,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Verify authorized admin email or owner credentials
     const isKnownAdmin =
       AUTHORIZED_ADMIN_EMAILS.includes(cleanEmail) ||
-      cleanEmail === 'thakorrahul8882@gmail.com' ||
-      cleanEmail === 'admin@amulkhodana.com';
+      cleanEmail === 'admin@amulkhodana.com' ||
+      cleanEmail === 'admin' ||
+      cleanEmail === 'thakorrahul8882@gmail.com';
 
     if (!isKnownAdmin) {
-      throw new Error('આ ઇમેઇલ એડમિનિસ્ટ્રેટર તરીકે નોંધાયેલ નથી.');
+      throw new Error('અમાન્ય ઇમેઇલ! કૃપા કરીને admin@amulkhodana.com નો ઉપયોગ કરો.');
     }
 
     try {
@@ -133,7 +135,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const result = await signInWithEmailAndPassword(auth, cleanEmail, passwordInput);
       const adminObj: AdminUser = {
         uid: result.user.uid,
-        email: result.user.email,
+        email: result.user.email || 'admin@amulkhodana.com',
         displayName: 'Amul Admin',
         isAdmin: true,
       };
@@ -149,7 +151,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       ) {
         const adminObj: AdminUser = {
           uid: 'admin_local_khodana',
-          email: cleanEmail,
+          email: 'admin@amulkhodana.com',
           displayName: 'અમૂલ પાર્લર ખોડાણા સંચાલક',
           isAdmin: true,
         };

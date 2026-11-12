@@ -30,6 +30,7 @@ import {
   Search,
   Filter,
   AlertCircle,
+  Plus,
 } from 'lucide-react';
 
 function MainAppContent() {
@@ -70,7 +71,7 @@ function MainAppContent() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Seed default Amul catalog if empty and subscribe to real-time updates
+  // Seed default Amul catalog (categories & settings) if database is fresh
   useEffect(() => {
     seedInitialDataIfEmpty();
 
@@ -234,30 +235,57 @@ function MainAppContent() {
 
         {/* Product Catalog Grid */}
         {filteredProducts.length === 0 ? (
-          <div className="py-16 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-3">
+          <div className="py-16 px-4 text-center bg-white rounded-3xl border border-slate-200 shadow-sm space-y-4">
             <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl mx-auto flex items-center justify-center">
-              <Search className="w-8 h-8" />
+              {products.length === 0 ? <Store className="w-8 h-8" /> : <Search className="w-8 h-8" />}
             </div>
-            <h3 className="font-extrabold text-slate-900 text-base">
-              {language === 'gu'
-                ? 'કોઈ પ્રોડક્ટ મળી નથી'
-                : 'No products found'}
-            </h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              {language === 'gu'
-                ? 'તમે શોધેલી વિગત મુજબ કોઈ પ્રોડક્ટ ઉપલબ્ધ નથી. કૃપા કરીને અન્ય નામ અથવા કેટેગરી પસંદ કરો.'
-                : 'Please try searching with a different keyword or reset filters.'}
-            </p>
-            <button
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCategoryId(null);
-                setActiveFilterTab('all');
-              }}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-colors"
-            >
-              {language === 'gu' ? 'બધી પ્રોડક્ટ્સ જુઓ' : 'Reset All Filters'}
-            </button>
+            
+            {products.length === 0 ? (
+              <>
+                <h3 className="font-extrabold text-slate-900 text-lg">
+                  {language === 'gu'
+                    ? 'અમૂલ પાર્લર ખોડાણા સ્ટોરમાં આપનું સ્વાગત છે!'
+                    : 'Welcome to Amul Parlour Khodana!'}
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
+                  {language === 'gu'
+                    ? 'તમામ ૧૨ કેટેગરીઓ (દૂધ, છાસ, ઘી, માખણ, આઈસ્ક્રીમ, પનીર વગેરે) તૈયાર છે. તમે એડમિન પેનલમાંથી તમારી નવી પ્રોડક્ટ્સ ઉમેરી શકો છો.'
+                    : 'All 12 categories are configured and ready. You can now add your custom products from the Admin Panel.'}
+                </p>
+                <div className="pt-2">
+                  <button
+                    onClick={() => navigateTo('admin')}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition-all active:scale-95"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>{language === 'gu' ? 'એડમિન પેનલમાં પ્રોડક્ટ ઉમેરો' : 'Add Products in Admin'}</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="font-extrabold text-slate-900 text-base">
+                  {language === 'gu'
+                    ? 'કોઈ પ્રોડક્ટ મળી નથી'
+                    : 'No products found'}
+                </h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  {language === 'gu'
+                    ? 'તમે શોધેલી વિગત મુજબ કોઈ પ્રોડક્ટ ઉપલબ્ધ નથી. કૃપા કરીને અન્ય નામ અથવા કેટેગરી પસંદ કરો.'
+                    : 'Please try searching with a different keyword or reset filters.'}
+                </p>
+                <button
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategoryId(null);
+                    setActiveFilterTab('all');
+                  }}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-colors"
+                >
+                  {language === 'gu' ? 'બધી પ્રોડક્ટ્સ જુઓ' : 'Reset All Filters'}
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
