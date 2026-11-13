@@ -1,20 +1,25 @@
 import React from 'react';
 import {
-  Sparkles,
   ShoppingBag,
   Clock,
-  ShieldCheck,
   Store,
   MessageCircle,
   Award,
   ChevronDown,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 
 export const HeroBanner: React.FC<{ onExploreClick: () => void }> = ({
   onExploreClick,
 }) => {
   const { language, t } = useLanguage();
+  const settings = useStoreSettings();
+
+  const phoneDisplay = settings.whatsappNumber || settings.phone || '8849526589';
+  const cleanPhone = phoneDisplay.replace(/\D/g, '');
+  const waNumber = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
+  const pickupLine = language === 'gu' ? settings.pickupNoticeGu : settings.pickupNoticeEn;
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-red-700 via-red-600 to-rose-700 text-white rounded-3xl shadow-xl my-4 sm:my-6 border border-red-800">
@@ -29,20 +34,22 @@ export const HeroBanner: React.FC<{ onExploreClick: () => void }> = ({
           
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs sm:text-sm font-bold border border-white/20">
             <Award className="w-4 h-4 text-yellow-300" />
-            <span className="text-yellow-200">ખોડાણા દૂધ ઉત્પાદક સહકારી મંડળી દ્વારા સંચાલિત</span>
+            <span className="text-yellow-200">
+              {language === 'gu' ? settings.storeSubNameGu : settings.storeSubNameEn}
+            </span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight leading-tight">
             {language === 'gu' ? (
               <>
-                શુદ્ધ, તાજા અને ગુણવત્તાયુક્ત <br />
+                {settings.storeNameGu} <br />
                 <span className="text-yellow-300 underline decoration-yellow-400 decoration-wavy decoration-2">
                   અમૂલ ડેરી ઉત્પાદનો
                 </span>
               </>
             ) : (
               <>
-                Pure, Fresh & Quality <br />
+                {settings.storeNameEn} <br />
                 <span className="text-yellow-300 underline decoration-yellow-400 decoration-wavy decoration-2">
                   Amul Dairy Products
                 </span>
@@ -52,8 +59,8 @@ export const HeroBanner: React.FC<{ onExploreClick: () => void }> = ({
 
           <p className="text-slate-100 text-sm sm:text-base max-w-2xl font-medium leading-relaxed">
             {language === 'gu'
-              ? 'અમૂલ ગોલ્ડ દૂધ, ઘી, માખણ, તાજું પનીર, ચીઝ, કેસર શ્રીખંડ અને લોકપ્રિય આઈસ્ક્રીમ હવે ઓનલાઇન પસંદ કરો અને સીધા ખોડાણા પાર્લર પરથી મેળવી લો.'
-              : 'Choose fresh Amul Gold milk, pure ghee, butter, paneer, cheese, shrikhand and ice creams online and pick up directly from Khodana parlour.'}
+              ? `અમૂલ ગોલ્ડ દૂધ, ઘી, માખણ, તાજું પનીર, ચીઝ, કેસર શ્રીખંડ અને લોકપ્રિય આઈસ્ક્રીમ હવે ઓનલાઇન પસંદ કરો અને ${settings.addressGu} પરથી મેળવી લો.`
+              : `Choose fresh Amul Gold milk, pure ghee, butter, paneer, cheese, shrikhand and ice creams online and pick up directly from ${settings.storeNameEn}.`}
           </p>
 
           {/* Timing & Pickup highlights */}
@@ -64,7 +71,9 @@ export const HeroBanner: React.FC<{ onExploreClick: () => void }> = ({
               </div>
               <div className="text-left text-xs">
                 <div className="font-bold text-yellow-300">દૂધ મંડળી સમય</div>
-                <div className="text-slate-200 font-semibold">સવારે ૬:૦૦ - ૧:૦૦ | સાંજ ૪:૩૦ - ૯:૩૦</div>
+                <div className="text-slate-200 font-semibold">
+                  {settings.morningTiming} | {settings.eveningTiming}
+                </div>
               </div>
             </div>
 
@@ -74,7 +83,7 @@ export const HeroBanner: React.FC<{ onExploreClick: () => void }> = ({
               </div>
               <div className="text-left text-xs">
                 <div className="font-bold text-blue-200">૧૦૦% શોપ પિકઅપ</div>
-                <div className="text-slate-200 font-semibold">હોમ ડિલિવરી નથી • દુકાનેથી જ પિકઅપ</div>
+                <div className="text-slate-200 font-semibold">{pickupLine}</div>
               </div>
             </div>
           </div>
@@ -91,13 +100,13 @@ export const HeroBanner: React.FC<{ onExploreClick: () => void }> = ({
             </button>
 
             <a
-              href="https://wa.me/918849526589?text=નમસ્તે,%20અમૂલ%20પાર્લર%20ખોડાણા%20ડેરી%20પ્રોડક્ટ્સ%20બાબતે%20માહિતી%20જોઈએ%20છે."
+              href={`https://wa.me/${waNumber}?text=${encodeURIComponent(`નમસ્તે, ${settings.storeNameGu} ડેરી પ્રોડક્ટ્સ બાબતે માહિતી જોઈએ છે.`)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-3 rounded-2xl shadow-lg transition-colors"
             >
               <MessageCircle className="w-5 h-5" />
-              <span>WhatsApp: 8849526589</span>
+              <span>WhatsApp: {phoneDisplay}</span>
             </a>
           </div>
 
@@ -105,15 +114,26 @@ export const HeroBanner: React.FC<{ onExploreClick: () => void }> = ({
 
         {/* Right Feature Card */}
         <div className="w-full lg:w-96 bg-white rounded-3xl p-5 text-slate-800 shadow-2xl border-4 border-yellow-400/40 shrink-0">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4 gap-2">
             <div className="flex items-center gap-2">
-              <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-                {language === 'gu' ? 'પાર્લર ચાલુ છે' : 'Parlour Open'}
-              </span>
+              {settings.isOpen ? (
+                <>
+                  <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                    {language === 'gu' ? 'પાર્લર ચાલુ છે' : 'Parlour Open'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="w-3 h-3 rounded-full bg-red-500"></span>
+                  <span className="text-xs font-bold uppercase tracking-wider text-red-600">
+                    {language === 'gu' ? 'પાર્લર હાલ બંધ છે' : 'Parlour Closed'}
+                  </span>
+                </>
+              )}
             </div>
-            <span className="text-xs font-semibold bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full">
-              ખોડાણા ગામ
+            <span className="text-xs font-semibold bg-red-100 text-red-700 px-2.5 py-0.5 rounded-full truncate max-w-[160px]" title={settings.addressGu}>
+              {settings.village || 'ખોડાણા ગામ'}
             </span>
           </div>
 
@@ -145,7 +165,7 @@ export const HeroBanner: React.FC<{ onExploreClick: () => void }> = ({
 
           <div className="mt-4 pt-3 border-t border-slate-100 text-center">
             <p className="text-[11px] text-red-600 font-bold">
-              🚫 હોમ ડિલિવરી સુવિધા નથી • દુકાન પરથી મેળવો
+              🚫 {pickupLine}
             </p>
           </div>
         </div>

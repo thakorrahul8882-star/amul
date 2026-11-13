@@ -1,5 +1,6 @@
 import React from 'react';
 import { useLanguage } from '../context/LanguageContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import {
   Store,
   Phone,
@@ -8,11 +9,15 @@ import {
   ShieldCheck,
   AlertTriangle,
   Lock,
-  Heart,
 } from 'lucide-react';
 
 export const Footer: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick }) => {
   const { language, t } = useLanguage();
+  const settings = useStoreSettings();
+
+  const whatsapp = (settings.whatsappNumber || settings.phone || '8849526589').replace(/\D/g, '');
+  const whatsappLink = `https://wa.me/${whatsapp.startsWith('91') ? whatsapp : `91${whatsapp}`}`;
+  const displayPhone = settings.phone || settings.whatsappNumber || '8849526589';
 
   return (
     <footer className="bg-slate-900 text-slate-300 pt-12 pb-8 border-t-4 border-red-600 mt-16">
@@ -34,10 +39,10 @@ export const Footer: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick })
               </div>
               <div>
                 <h3 className="font-extrabold text-white text-base">
-                  {language === 'gu' ? 'અમૂલ પાર્લર ખોડાણા' : 'Amul Parlour Khodana'}
+                  {language === 'gu' ? settings.storeNameGu : settings.storeNameEn}
                 </h3>
                 <p className="text-xs text-red-400 font-semibold">
-                  {language === 'gu' ? 'દૂધ મંડળી દ્વારા સંચાલિત' : 'Managed by Milk Cooperative'}
+                  {language === 'gu' ? settings.storeSubNameGu : settings.storeSubNameEn}
                 </p>
               </div>
             </div>
@@ -62,17 +67,17 @@ export const Footer: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick })
             <div className="space-y-2 text-xs">
               <div className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
                 <span className="font-bold text-yellow-300 block mb-0.5">સવારનું સત્ર:</span>
-                <span className="text-slate-300">૬:૦૦ AM થી ૧:૦૦ PM (દૂધ ભરવાનો સમય)</span>
+                <span className="text-slate-300">{settings.morningTiming}</span>
               </div>
 
               <div className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700">
                 <span className="font-bold text-yellow-300 block mb-0.5">સાંજનું સત્ર:</span>
-                <span className="text-slate-300">૪:૩૦ PM થી ૯:૩૦ PM</span>
+                <span className="text-slate-300">{settings.eveningTiming}</span>
               </div>
             </div>
 
             <p className="text-[11px] text-slate-400 italic">
-              *સાત દિવસ ખુલ્લું • ડેરી મંડળી સંકુલ
+              *સાત દિવસ ખુલ્લું • {settings.storeSubNameGu}
             </p>
           </div>
 
@@ -85,26 +90,26 @@ export const Footer: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick })
 
             <div className="space-y-2 text-xs">
               <a
-                href="https://wa.me/918849526589"
+                href={whatsappLink}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-950/60 border border-emerald-800 text-emerald-300 hover:bg-emerald-900/60 transition-colors"
               >
                 <MessageCircle className="w-4 h-4 text-emerald-400" />
-                <span>WhatsApp: 8849526589</span>
+                <span>WhatsApp: {settings.whatsappNumber || displayPhone}</span>
               </a>
 
               <a
-                href="tel:8849526589"
+                href={`tel:${displayPhone}`}
                 className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-slate-300 hover:text-white"
               >
                 <Phone className="w-4 h-4 text-yellow-400" />
-                <span>ફોન: 8849526589</span>
+                <span>ફોન: {displayPhone}</span>
               </a>
 
               <div className="flex items-start gap-2 text-slate-400 pt-1">
                 <Store className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                <span>મુખ્ય બજાર, દૂધ મંડળી સંકુલ, ખોડાણા, ગુજરાત.</span>
+                <span>{language === 'gu' ? settings.addressGu : settings.addressEn}</span>
               </div>
             </div>
           </div>
@@ -118,10 +123,10 @@ export const Footer: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick })
 
             <div className="p-3.5 rounded-2xl bg-red-950/40 border border-red-800/80 text-xs text-red-200 leading-relaxed space-y-2">
               <p className="font-bold text-yellow-300 underline decoration-yellow-400">
-                {t('pickupOnlyNotice')}
+                {language === 'gu' ? settings.pickupNoticeGu : settings.pickupNoticeEn}
               </p>
               <p className="text-[11px] text-slate-300">
-                {t('disclaimerText')} ગ્રાહકે જાતે ખોડાણા અમૂલ પાર્લર આવીને ઓર્ડર મેળવવાનો રહેશે.
+                {t('disclaimerText')} ગ્રાહકે જાતે {settings.storeNameGu} આવીને ઓર્ડર મેળવવાનો રહેશે.
               </p>
             </div>
 
@@ -141,7 +146,7 @@ export const Footer: React.FC<{ onAdminClick: () => void }> = ({ onAdminClick })
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            © {new Date().getFullYear()} અમૂલ પાર્લર ખોડાણા. દૂધ ઉત્પાદક સહકારી મંડળી દ્વારા સર્વાધિકાર સુરક્ષિત.
+            © {new Date().getFullYear()} {settings.storeNameGu}. દૂધ ઉત્પાદક સહકારી મંડળી દ્વારા સર્વાધિકાર સુરક્ષિત.
           </div>
           <div className="flex items-center gap-1">
             <span>The Taste of India</span>

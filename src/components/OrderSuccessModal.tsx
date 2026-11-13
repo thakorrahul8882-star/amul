@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import {
   getWhatsAppClickToChatLink,
   SHOP_WHATSAPP_NUMBER,
@@ -14,14 +15,17 @@ import {
   Clock,
   Phone,
   AlertCircle,
-  ArrowRight,
   ExternalLink,
 } from 'lucide-react';
 
 export const OrderSuccessModal: React.FC = () => {
   const { lastPlacedOrder, setLastPlacedOrder, setIsTrackingOpen } = useCart();
   const { language, t } = useLanguage();
+  const settings = useStoreSettings();
   const [copied, setCopied] = React.useState(false);
+
+  const shopWhatsapp = settings.whatsappNumber || settings.phone || SHOP_WHATSAPP_NUMBER;
+  const shopPhone = settings.phone || settings.whatsappNumber || SHOP_WHATSAPP_NUMBER;
 
   if (!lastPlacedOrder) return null;
 
@@ -64,8 +68,8 @@ export const OrderSuccessModal: React.FC = () => {
               </h3>
               <p className="text-xs text-slate-500 font-medium">
                 {language === 'gu'
-                  ? 'તમારો ઓર્ડર અમૂલ પાર્લર ખોડાણા ખાતે નોંધાઈ ચૂક્યો છે.'
-                  : 'Your order is recorded at Amul Parlour Khodana.'}
+                  ? `તમારો ઓર્ડર ${settings.storeNameGu} ખાતે નોંધાઈ ચૂક્યો છે.`
+                  : `Your order is recorded at ${settings.storeNameEn}.`}
               </p>
             </div>
 
@@ -103,7 +107,7 @@ export const OrderSuccessModal: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-[11px] text-emerald-700 mt-0.5">
-                  દુકાનદારને વોટ્સએપ નંબર <span className="font-bold">{SHOP_WHATSAPP_NUMBER}</span> પર ઓર્ડરની સંપૂર્ણ વિગત આપમેળે મોકલી દેવાઈ છે.
+                  દુકાનદારને વોટ્સએપ નંબર <span className="font-bold">{shopWhatsapp}</span> પર ઓર્ડરની સંપૂર્ણ વિગત આપમેળે મોકલી દેવાઈ છે.
                 </p>
               </div>
             </div>
@@ -118,21 +122,27 @@ export const OrderSuccessModal: React.FC = () => {
               <div className="space-y-1.5 text-xs text-slate-700">
                 <div className="flex items-start gap-2">
                   <span className="font-bold text-slate-900 shrink-0">સ્થળ:</span>
-                  <span>અમૂલ પાર્લર ખોડાણા (દૂધ ઉત્પાદક સહકારી મંડળી સંકુલ, મુખ્ય બજાર)</span>
+                  <span>
+                    {language === 'gu'
+                      ? `${settings.storeNameGu} (${settings.addressGu})`
+                      : `${settings.storeNameEn} (${settings.addressEn})`}
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
                   <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
-                  <span>સમય: સવારે ૬:૦૦ - ૧:૦૦ | સાંજે ૪:૩૦ - ૯:૩૦</span>
+                  <span>
+                    સમય: સવારે {settings.morningTiming} | સાંજે {settings.eveningTiming}
+                  </span>
                 </div>
                 <div className="flex items-start gap-2">
                   <Phone className="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5" />
-                  <span>સંપર્ક: 8849526589</span>
+                  <span>સંપર્ક: {shopPhone}</span>
                 </div>
               </div>
 
               <div className="p-2 rounded-xl bg-red-100/70 border border-red-200 text-[11px] text-red-900 font-bold flex items-center gap-1.5">
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
-                <span>{t('pickupOnlyNotice')}</span>
+                <span>{language === 'gu' ? settings.pickupNoticeGu : settings.pickupNoticeEn}</span>
               </div>
             </div>
 
@@ -166,16 +176,16 @@ export const OrderSuccessModal: React.FC = () => {
             {/* Action Buttons */}
             <div className="space-y-2.5 pt-2">
               
-              {/* Optional direct WhatsApp link */}
+              {/* Direct WhatsApp send to shopkeeper */}
               <a
                 href={getWhatsAppClickToChatLink(lastPlacedOrder)}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-4 rounded-2xl shadow-md transition-colors text-xs sm:text-sm"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-emerald-200 transition-all text-xs sm:text-sm active:scale-98"
               >
-                <MessageCircle className="w-4 h-4" />
-                <span>{t('whatsappFallbackBtn')}</span>
-                <ExternalLink className="w-3.5 h-3.5" />
+                <MessageCircle className="w-5 h-5 text-yellow-300" />
+                <span>👉 દુકાનદારને WhatsApp પર ઓર્ડર મોકલો (Send on WhatsApp)</span>
+                <ExternalLink className="w-4 h-4 text-emerald-200" />
               </a>
 
               <div className="grid grid-cols-2 gap-2">

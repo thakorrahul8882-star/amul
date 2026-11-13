@@ -1,6 +1,7 @@
 import React from 'react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import {
   X,
   Trash2,
@@ -10,7 +11,6 @@ import {
   Store,
   AlertTriangle,
   ArrowRight,
-  ShieldCheck,
 } from 'lucide-react';
 
 export const CartDrawer: React.FC = () => {
@@ -26,6 +26,7 @@ export const CartDrawer: React.FC = () => {
     setIsCheckoutOpen,
   } = useCart();
   const { language, t } = useLanguage();
+  const settings = useStoreSettings();
 
   if (!isCartOpen) return null;
 
@@ -85,7 +86,7 @@ export const CartDrawer: React.FC = () => {
             <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div className="text-xs text-red-800 font-semibold leading-relaxed">
               <span className="font-bold underline decoration-red-400">
-                {t('pickupOnlyNotice')}
+                {language === 'gu' ? settings.pickupNoticeGu : settings.pickupNoticeEn}
               </span>
               <p className="text-[11px] text-red-700 font-normal mt-0.5">
                 {t('pickupNoticeDetailed')}
@@ -207,11 +208,29 @@ export const CartDrawer: React.FC = () => {
                 <span>{language === 'gu' ? 'ચુકવણી: દુકાન પર રોકડેથી અથવા UPI સ્કેનથી' : 'Payment: Cash or UPI Scan at counter'}</span>
               </div>
 
+              {!settings.isOpen && (
+                <div className="bg-red-100 border border-red-300 rounded-xl p-2.5 text-[11px] text-red-800 font-bold flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                  <span>
+                    {language === 'gu'
+                      ? 'પાર્લર હાલ ઓનલાઈન ઓર્ડર માટે બંધ છે.'
+                      : 'Parlour is currently closed for online orders.'}
+                  </span>
+                </div>
+              )}
+
               <button
                 onClick={handleProceedToCheckout}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-red-200 transition-transform active:scale-98"
+                disabled={!settings.isOpen}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-red-200 transition-transform active:scale-98"
               >
-                <span>{t('checkout')}</span>
+                <span>
+                  {settings.isOpen
+                    ? t('checkout')
+                    : language === 'gu'
+                    ? 'પાર્લર હાલ બંધ છે'
+                    : 'Store Currently Closed'}
+                </span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>

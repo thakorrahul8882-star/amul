@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { useCart } from '../context/CartContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 
 interface HeaderProps {
   searchQuery: string;
@@ -29,7 +30,12 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const { language, toggleLanguage, t } = useLanguage();
   const { totalItems, totalAmount, setIsCartOpen, setIsTrackingOpen } = useCart();
+  const settings = useStoreSettings();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const phoneDisplay = settings.whatsappNumber || settings.phone || '8849526589';
+  const cleanPhone = phoneDisplay.replace(/\D/g, '');
+  const waNumber = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
 
   return (
     <header className="sticky top-0 z-40 bg-white shadow-sm border-b border-slate-200">
@@ -42,21 +48,21 @@ export const Header: React.FC<HeaderProps> = ({
               અમૂલ - ધ ટેસ્ટ ઓફ ઇન્ડિયા (The Taste of India)
             </span>
             <span className="text-slate-500">•</span>
-            <span className="text-slate-300">ખોડાણા દૂધ ઉત્પાદક સહકારી મંડળી લિ.</span>
+            <span className="text-slate-300">{settings.storeSubNameGu}</span>
           </div>
           <div className="flex items-center gap-5">
             <span className="flex items-center gap-1 text-slate-300">
               <Clock className="w-3.5 h-3.5 text-yellow-400" />
-              સવારે ૬:૦૦ - ૧:૦૦ | સાંજે ૪:૩૦ - ૯:૩૦
+              {settings.morningTiming} | {settings.eveningTiming}
             </span>
             <a
-              href="https://wa.me/918849526589"
+              href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1 text-emerald-400 font-medium hover:text-emerald-300 transition-colors"
             >
               <MessageCircle className="w-3.5 h-3.5" />
-              WhatsApp: 8849526589
+              WhatsApp: {phoneDisplay}
             </a>
             <button
               onClick={onAdminClick}
@@ -89,7 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-lg sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                  {language === 'gu' ? 'અમૂલ પાર્લર ખોડાણા' : 'Amul Parlour Khodana'}
+                  {language === 'gu' ? settings.storeNameGu : settings.storeNameEn}
                 </h1>
                 <span className="hidden sm:inline-block bg-blue-100 text-blue-800 text-[11px] font-bold px-2 py-0.5 rounded-full border border-blue-200">
                   દૂધ મંડળી
@@ -97,9 +103,9 @@ export const Header: React.FC<HeaderProps> = ({
               </div>
               <p className="text-xs sm:text-sm text-slate-500 font-medium flex items-center gap-1">
                 <span className="text-red-600 font-semibold">
-                  {language === 'gu' ? 'દૂધ મંડળી દ્વારા સંચાલિત' : 'Managed by Dairy Cooperative'}
+                  {language === 'gu' ? settings.storeSubNameGu : settings.storeSubNameEn}
                 </span>
-                <span className="hidden md:inline">• ખોડાણા</span>
+                <span className="hidden md:inline">• {settings.village || 'ખોડાણા'}</span>
               </p>
             </div>
           </div>
@@ -222,14 +228,14 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <a
-              href="https://wa.me/918849526589"
+              href={`https://wa.me/${waNumber}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
             >
               <span className="flex items-center gap-2">
                 <MessageCircle className="w-4 h-4" />
-                WhatsApp: 8849526589
+                WhatsApp: {phoneDisplay}
               </span>
               <ChevronRight className="w-4 h-4 text-emerald-600" />
             </a>

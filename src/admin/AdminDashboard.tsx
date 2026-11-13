@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Order, Product, Category, StoreSettings, OrderStatus } from '../types';
+import { DEFAULT_STORE_SETTINGS } from '../data/defaultCatalog';
 import {
   subscribeToOrders,
   subscribeToProducts,
@@ -15,6 +16,44 @@ import {
 import { AdminProductManagement } from './AdminProductManagement';
 import { AdminCategoryManagement } from './AdminCategoryManagement';
 import { AdminSettings } from './AdminSettings';
+
+/**
+ * Play authentic cashier / POS order chime when a new order arrives
+ */
+function playNewOrderSound() {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const now = ctx.currentTime;
+
+    // First note: 587.33 Hz (D5)
+    const osc1 = ctx.createOscillator();
+    const gain1 = ctx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(587.33, now);
+    gain1.gain.setValueAtTime(0.35, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+    osc1.connect(gain1);
+    gain1.connect(ctx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.35);
+
+    // Second note: 880 Hz (A5)
+    const osc2 = ctx.createOscillator();
+    const gain2 = ctx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(880, now + 0.12);
+    gain2.gain.setValueAtTime(0.4, now + 0.12);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.65);
+    osc2.connect(gain2);
+    gain2.connect(ctx.destination);
+    osc2.start(now + 0.12);
+    osc2.stop(now + 0.65);
+  } catch (err) {
+    console.warn('Audio alert notice:', err);
+  }
+}
 import {
   ShoppingBag,
   TrendingUp,
@@ -60,9 +99,26 @@ export const AdminDashboard: React.FC<{ onBackToStore: () => void }> = ({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedOrderForPrint, setSelectedOrderForPrint] = useState<Order | null>(null);
+  const [newOrderAlert, setNewOrderAlert] = useState<Order | null>(null);
+
+  const isInitialOrdersLoad = useRef(true);
+  const previousOrdersCount = useRef(0);
 
   useEffect(() => {
-    const unsubOrders = subscribeToOrders((data) => setOrders(data));
+    const unsubOrders = subscribeToOrders((data) => {
+      // If a new order is received while the dashboard is running
+      if (!isInitialOrdersLoad.current && data.length > previousOrdersCount.current) {
+        const newest = data[0];
+        if (newest && newest.status === 'new') {
+          playNewOrderSound();
+          setNewOrderAlert(newest);
+        }
+      }
+      isInitialOrdersLoad.current = false;
+      previousOrdersCount.current = data.length;
+      setOrders(data);
+    });
+
     const unsubProducts = subscribeToProducts((data) => setProducts(data));
     const unsubCats = subscribeToCategories((data) => setCategories(data));
     const unsubSettings = subscribeToStoreSettings((data) => setSettings(data));
@@ -128,10 +184,11 @@ export const AdminDashboard: React.FC<{ onBackToStore: () => void }> = ({
               </div>
               <div>
                 <h1 className="font-extrabold text-sm sm:text-base leading-tight">
-                  અમૂલ પાર્લર ખોડાણા - સંચાલક ડેશબોર્ડ
+                  {(settings || DEFAULT_STORE_SETTINGS).storeNameGu} - સંચાલક ડેશબોર્ડ
                 </h1>
                 <p className="text-[11px] text-red-400 font-medium">
-                  દૂધ મંડળી દ્વારા સંચાલિત • WhatsApp: 8849526589
+                  {(settings || DEFAULT_STORE_SETTINGS).storeSubNameGu} • WhatsApp:{' '}
+                  {(settings || DEFAULT_STORE_SETTINGS).whatsappNumber}
                 </p>
               </div>
             </div>
@@ -169,6 +226,46 @@ export const AdminDashboard: React.FC<{ onBackToStore: () => void }> = ({
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+        
+        {/* Live New Order Real-Time Alert Banner */}
+        {newOrderAlert && (
+          <div className="bg-gradient-to-r from-red-600 via-red-700 to-amber-600 text-white p-4 rounded-3xl shadow-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in slide-in-from-top-4 duration-300 border-2 border-yellow-300">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-md shrink-0">
+                <BellRing className="w-6 h-6 text-yellow-300 animate-bounce" />
+              </div>
+              <div>
+                <div className="font-extrabold text-sm sm:text-base flex items-center gap-2">
+                  <span>🔔 નવો ઓર્ડર આવ્યો છે!</span>
+                  <span className="font-mono bg-white text-red-700 px-2.5 py-0.5 rounded-lg text-xs font-black shadow-sm">
+                    {newOrderAlert.orderId}
+                  </span>
+                </div>
+                <p className="text-xs text-red-100 mt-0.5 font-medium">
+                  ગ્રાહક: <strong className="text-white">{newOrderAlert.customerName}</strong> ({newOrderAlert.customerMobile}) • કુલ રકમ: <strong className="text-yellow-300">₹{newOrderAlert.totalAmount}</strong>
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-2 sm:pt-0">
+              <button
+                onClick={() => {
+                  setActiveTab('orders');
+                  setStatusFilter('all');
+                  setNewOrderAlert(null);
+                }}
+                className="px-4 py-2 bg-white text-red-700 font-extrabold text-xs rounded-xl shadow-md hover:bg-red-50 transition-all active:scale-95"
+              >
+                ઓર્ડર જુઓ (View)
+              </button>
+              <button
+                onClick={() => setNewOrderAlert(null)}
+                className="p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/10"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
         
         {/* KPI Metrics Dashboard Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
@@ -556,8 +653,8 @@ export const AdminDashboard: React.FC<{ onBackToStore: () => void }> = ({
         )}
 
         {/* Tab 4: Store Settings */}
-        {activeTab === 'settings' && settings && (
-          <AdminSettings settings={settings} />
+        {activeTab === 'settings' && (
+          <AdminSettings settings={settings || DEFAULT_STORE_SETTINGS} />
         )}
 
       </main>
@@ -566,8 +663,13 @@ export const AdminDashboard: React.FC<{ onBackToStore: () => void }> = ({
       {selectedOrderForPrint && (
         <div id="printable-receipt" className="p-8 text-black bg-white max-w-sm mx-auto">
           <div className="text-center pb-3 border-b-2 border-black space-y-1">
-            <h2 className="text-xl font-bold font-serif">અમૂલ પાર્લર ખોડાણા</h2>
-            <p className="text-xs">દૂધ મંડળી દ્વારા સંચાલિત • Ph: 8849526589</p>
+            <h2 className="text-xl font-bold font-serif">
+              {(settings || DEFAULT_STORE_SETTINGS).storeNameGu}
+            </h2>
+            <p className="text-xs">
+              {(settings || DEFAULT_STORE_SETTINGS).storeSubNameGu} • Ph:{' '}
+              {(settings || DEFAULT_STORE_SETTINGS).whatsappNumber}
+            </p>
             <p className="text-sm font-mono font-bold mt-1">ORDER ID: {selectedOrderForPrint.orderId}</p>
             <p className="text-[10px]">{new Date(selectedOrderForPrint.createdAt).toLocaleString()}</p>
           </div>

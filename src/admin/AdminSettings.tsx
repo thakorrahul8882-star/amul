@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StoreSettings } from '../types';
 import { updateStoreSettings } from '../services/storeService';
 import {
@@ -18,18 +18,28 @@ export const AdminSettings: React.FC<{ settings: StoreSettings }> = ({
   const [formData, setFormData] = useState<StoreSettings>(settings);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Keep form data synchronized with fresh Firestore settings updates
+  useEffect(() => {
+    if (settings) {
+      setFormData(settings);
+    }
+  }, [settings]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setSuccess(false);
+    setErrorMessage(null);
     try {
       await updateStoreSettings(formData);
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
-    } catch (err) {
-      console.error(err);
-      alert('સેટિંગ્સ સેવ કરવામાં ભૂલ આવી.');
+      setTimeout(() => setSuccess(false), 4000);
+    } catch (err: unknown) {
+      console.error('Settings save error:', err);
+      const msg = err instanceof Error ? err.message : 'સેટિંગ્સ સેવ કરવામાં ભૂલ આવી.';
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }
@@ -39,9 +49,16 @@ export const AdminSettings: React.FC<{ settings: StoreSettings }> = ({
     <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
       
       {success && (
-        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2">
+        <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
           <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
           <span>સેટિંગ્સ સફળતાપૂર્વક અપડેટ થઈ ગઈ છે! (Settings Saved)</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+          <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
@@ -95,7 +112,13 @@ export const AdminSettings: React.FC<{ settings: StoreSettings }> = ({
                 type="text"
                 required
                 value={formData.whatsappNumber}
-                onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    whatsappNumber: e.target.value,
+                    phone: e.target.value,
+                  })
+                }
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-mono text-sm"
               />
               <MessageCircle className="w-4 h-4 text-emerald-600 absolute left-3 top-2.5" />

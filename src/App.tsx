@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { Product, Category, StoreSettings } from './types';
+import { Product, Category } from './types';
 import {
   seedInitialDataIfEmpty,
   subscribeToProducts,
   subscribeToCategories,
-  subscribeToStoreSettings,
 } from './services/storeService';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { StoreSettingsProvider, useStoreSettings } from './context/StoreSettingsContext';
 import { PickupNoticeBanner } from './components/PickupNoticeBanner';
 import { Header } from './components/Header';
 import { HeroBanner } from './components/HeroBanner';
@@ -35,7 +35,8 @@ import {
 
 function MainAppContent() {
   const { language, t } = useLanguage();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin } = useAuth();
+  const storeSettings = useStoreSettings();
 
   // Navigation: Support URL path '/admin' and in-app route state
   const [currentView, setCurrentView] = useState<'store' | 'admin'>(() => {
@@ -44,7 +45,6 @@ function MainAppContent() {
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [storeSettings, setStoreSettings] = useState<StoreSettings | null>(null);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -77,12 +77,10 @@ function MainAppContent() {
 
     const unsubProducts = subscribeToProducts((data) => setProducts(data));
     const unsubCategories = subscribeToCategories((data) => setCategories(data));
-    const unsubSettings = subscribeToStoreSettings((data) => setStoreSettings(data));
 
     return () => {
       unsubProducts();
       unsubCategories();
-      unsubSettings();
     };
   }, []);
 
@@ -228,8 +226,8 @@ function MainAppContent() {
             {selectedCategoryId
               ? categories.find((c) => c.id === selectedCategoryId)?.nameGu
               : language === 'gu'
-              ? 'ખોડાણા અમૂલ પાર્લર ડેરી મેનૂ'
-              : 'Khodana Dairy Catalog'}
+              ? `${storeSettings.storeNameGu} મેનૂ`
+              : `${storeSettings.storeNameEn} Catalog`}
           </div>
         </div>
 
@@ -244,8 +242,8 @@ function MainAppContent() {
               <>
                 <h3 className="font-extrabold text-slate-900 text-lg">
                   {language === 'gu'
-                    ? 'અમૂલ પાર્લર ખોડાણા સ્ટોરમાં આપનું સ્વાગત છે!'
-                    : 'Welcome to Amul Parlour Khodana!'}
+                    ? `${storeSettings.storeNameGu} સ્ટોરમાં આપનું સ્વાગત છે!`
+                    : `Welcome to ${storeSettings.storeNameEn}!`}
                 </h3>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
                   {language === 'gu'
@@ -348,9 +346,11 @@ export default function App() {
   return (
     <LanguageProvider>
       <AuthProvider>
-        <CartProvider>
-          <MainAppContent />
-        </CartProvider>
+        <StoreSettingsProvider>
+          <CartProvider>
+            <MainAppContent />
+          </CartProvider>
+        </StoreSettingsProvider>
       </AuthProvider>
     </LanguageProvider>
   );

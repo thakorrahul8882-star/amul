@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import { findOrderByTracking } from '../services/storeService';
 import { Order, OrderStatus } from '../types';
 import {
@@ -10,11 +11,8 @@ import {
   CheckCircle,
   Package,
   Store,
-  Phone,
   AlertCircle,
   XCircle,
-  ChevronRight,
-  MessageCircle,
 } from 'lucide-react';
 
 const STATUS_STEPS: { status: OrderStatus; labelGu: string; labelEn: string }[] = [
@@ -28,6 +26,7 @@ const STATUS_STEPS: { status: OrderStatus; labelGu: string; labelEn: string }[] 
 export const OrderTrackingModal: React.FC = () => {
   const { isTrackingOpen, setIsTrackingOpen } = useCart();
   const { language, t } = useLanguage();
+  const settings = useStoreSettings();
 
   const [orderIdInput, setOrderIdInput] = useState('');
   const [mobileInput, setMobileInput] = useState('');
@@ -263,10 +262,13 @@ export const OrderTrackingModal: React.FC = () => {
                 <div className="p-3.5 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-900 space-y-1">
                   <div className="font-bold flex items-center gap-1.5">
                     <Store className="w-4 h-4 text-amber-700" />
-                    <span>પિકઅપ સરનામું: અમૂલ પાર્લર ખોડાણા (દૂધ મંડળી સંકુલ)</span>
+                    <span>
+                      પિકઅપ સરનામું: {language === 'gu' ? settings.storeNameGu : settings.storeNameEn} ({language === 'gu' ? settings.addressGu : settings.addressEn})
+                    </span>
                   </div>
                   <p className="text-[11px] text-amber-800">
-                    દુકાને આવીને આ Order ID ({searchedOrder.orderId}) બતાવો. હોમ ડિલિવરી ઉપલબ્ધ નથી.
+                    દુકાને આવીને આ Order ID ({searchedOrder.orderId}) બતાવો.{' '}
+                    {language === 'gu' ? settings.pickupNoticeGu : settings.pickupNoticeEn}
                   </p>
                 </div>
 

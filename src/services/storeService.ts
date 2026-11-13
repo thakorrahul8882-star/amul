@@ -146,29 +146,61 @@ export function subscribeToCategories(
 }
 
 /**
+ * Get locally cached store settings synchronously
+ */
+export function getStoredSettings(): StoreSettings {
+  try {
+    const cached = localStorage.getItem('amul_store_settings');
+    if (cached) {
+      return { ...DEFAULT_STORE_SETTINGS, ...JSON.parse(cached) };
+    }
+  } catch {
+    // Ignore
+  }
+  return DEFAULT_STORE_SETTINGS;
+}
+
+/**
  * Subscribe to store settings
  */
 export function subscribeToStoreSettings(
   callback: (settings: StoreSettings) => void
 ) {
+  // First invoke callback immediately with cached settings if available
+  try {
+    const cached = localStorage.getItem('amul_store_settings');
+    if (cached) {
+      callback({ ...DEFAULT_STORE_SETTINGS, ...JSON.parse(cached) });
+    }
+  } catch {
+    // Ignore
+  }
+
   try {
     const docRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
     return onSnapshot(
       docRef,
       (snapshot) => {
         if (snapshot.exists()) {
-          callback(snapshot.data() as StoreSettings);
+          const remoteData = snapshot.data() as StoreSettings;
+          const merged = { ...DEFAULT_STORE_SETTINGS, ...remoteData };
+          try {
+            localStorage.setItem('amul_store_settings', JSON.stringify(merged));
+          } catch {
+            // Ignore
+          }
+          callback(merged);
         } else {
-          callback(DEFAULT_STORE_SETTINGS);
+          callback(getStoredSettings());
         }
       },
       (error) => {
-        console.warn('Firestore settings subscription notice, using default settings:', error);
-        callback(DEFAULT_STORE_SETTINGS);
+        console.warn('Firestore settings subscription notice, using cached/default settings:', error);
+        callback(getStoredSettings());
       }
     );
   } catch (error) {
-    callback(DEFAULT_STORE_SETTINGS);
+    callback(getStoredSettings());
     return () => {};
   }
 }
@@ -439,15 +471,31 @@ export async function deleteCategory(categoryId: string): Promise<void> {
 export async function updateStoreSettings(settings: StoreSettings): Promise<void> {
   try {
     const docRef = doc(db, SETTINGS_COLLECTION, SETTINGS_DOC_ID);
-    await setDoc(
-      docRef,
-      {
-        ...settings,
-        adminPasscode: ADMIN_PASSCODE,
-        updatedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
+
+    // Sanitize to eliminate any undefined values which cause Firestore setDoc() to fail
+    const cleanPayload: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(settings)) {
+      if (val !== undefined) {
+        cleanPayload[key] = val;
+      }
+    }
+
+    const payload = {
+      ...cleanPayload,
+      adminPasscode: ADMIN_PASSCODE,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Update Firestore
+    await setDoc(docRef, payload, { merge: true });
+
+    // Cache locally so updates take effect immediately without refresh
+    try {
+      localStorage.setItem('amul_store_settings', JSON.stringify({ ...DEFAULT_STORE_SETTINGS, ...cleanPayload }));
+      window.dispatchEvent(new Event('amul_settings_updated'));
+    } catch {
+      // Ignore
+    }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, `${SETTINGS_COLLECTION}/${SETTINGS_DOC_ID}`);
   }

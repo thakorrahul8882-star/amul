@@ -1,4 +1,5 @@
 import { Order } from '../types';
+import { getStoredSettings } from './storeService';
 
 export const SHOP_WHATSAPP_NUMBER = '8849526589';
 
@@ -6,6 +7,7 @@ export const SHOP_WHATSAPP_NUMBER = '8849526589';
  * Format the exact WhatsApp notification text required by the prompt
  */
 export function formatOrderWhatsAppMessage(order: Order): string {
+  const currentSettings = getStoredSettings();
   const productLines = order.items
     .map(
       (item, idx) =>
@@ -26,9 +28,9 @@ ${productLines}
 Total: ₹${order.totalAmount}
 
 Payment: ${order.paymentMethod === 'counter_cash' ? 'Cash at Counter' : 'UPI at Counter'}
-${order.orderNotes ? `Notes: ${order.orderNotes}\n` : ''}Pickup: Amul Parlour Khodana
-દૂધ મંડળી દ્વારા સંચાલિત
-(Only Shop Pickup - No Home Delivery)`;
+${order.orderNotes ? `Notes: ${order.orderNotes}\n` : ''}Pickup: ${currentSettings.storeNameEn || currentSettings.storeNameGu}
+${currentSettings.storeSubNameGu}
+(${currentSettings.pickupNoticeGu || 'Only Shop Pickup - No Home Delivery'})`;
 }
 
 /**
@@ -40,13 +42,16 @@ export async function sendAutomaticWhatsAppNotification(order: Order): Promise<{
   channel?: 'cloud_api' | 'fallback_ready';
 }> {
   try {
+    const currentSettings = getStoredSettings();
+    const recipient = currentSettings.whatsappNumber || SHOP_WHATSAPP_NUMBER;
+
     const response = await fetch('/api/send-whatsapp', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        recipientPhone: SHOP_WHATSAPP_NUMBER,
+        recipientPhone: recipient,
         order: order,
         message: formatOrderWhatsAppMessage(order),
       }),
@@ -80,8 +85,10 @@ export async function sendAutomaticWhatsAppNotification(order: Order): Promise<{
 /**
  * Generate direct WhatsApp web/app link for fallback or customer confirmation
  */
-export function getWhatsAppClickToChatLink(order: Order, phone: string = SHOP_WHATSAPP_NUMBER): string {
-  const cleanPhone = phone.replace(/\D/g, '');
+export function getWhatsAppClickToChatLink(order: Order, phone?: string): string {
+  const currentSettings = getStoredSettings();
+  const targetNumber = phone || currentSettings.whatsappNumber || SHOP_WHATSAPP_NUMBER;
+  const cleanPhone = targetNumber.replace(/\D/g, '');
   const internationalPhone = cleanPhone.startsWith('91') ? cleanPhone : `91${cleanPhone}`;
   const message = encodeURIComponent(formatOrderWhatsAppMessage(order));
   return `https://wa.me/${internationalPhone}?text=${message}`;
@@ -91,19 +98,22 @@ export function getWhatsAppClickToChatLink(order: Order, phone: string = SHOP_WH
  * Generate customer status update message for shopkeeper to send to customer
  */
 export function getCustomerStatusUpdateWhatsAppLink(order: Order): string {
+  const currentSettings = getStoredSettings();
   const cleanMobile = order.customerMobile.replace(/\D/g, '');
   const targetPhone = cleanMobile.startsWith('91') ? cleanMobile : `91${cleanMobile}`;
+  const storeName = currentSettings.storeNameGu || 'અમૂલ પાર્લર ખોડાણા';
+  const contactNo = currentSettings.whatsappNumber || currentSettings.phone || SHOP_WHATSAPP_NUMBER;
 
   const statusTextGu =
     order.status === 'ready_for_pickup'
-      ? 'તમારો ઓર્ડર દુકાનેથી મેળવવા માટે તૈયાર છે! કૃપા કરીને અમૂલ પાર્લર ખોડાણા (દૂધ મંડળી) થી પિકઅપ કરી લો.'
+      ? `તમારો ઓર્ડર દુકાનેથી મેળવવા માટે તૈયાર છે! કૃપા કરીને ${storeName} (${currentSettings.storeSubNameGu}) થી પિકઅપ કરી લો.`
       : order.status === 'accepted'
       ? 'તમારો ઓર્ડર સ્વીકારાઈ ગયો છે અને પેક કરવામાં આવી રહ્યો છે.'
       : order.status === 'completed'
-      ? 'ઓર્ડર મેળવવા બદલ આપનો ખૂબ ખૂબ આભાર! - અમૂલ પાર્લર ખોડાણા'
+      ? `ઓર્ડર મેળવવા બદલ આપનો ખૂબ ખૂબ આભાર! - ${storeName}`
       : `તમારા ઓર્ડરનું વર્તમાન સ્ટેટસ: ${order.status}`;
 
-  const message = `નમસ્તે ${order.customerName},\n\n*અમૂલ પાર્લર ખોડાણા (દૂધ મંડળી)*\nઓર્ડર નંબર: ${order.orderId}\nકુલ રકમ: ₹${order.totalAmount}\n\n${statusTextGu}\n\nપિકઅપ સરનામું: અમૂલ પાર્લર ખોડાણા, દૂધ મંડળી સંકુલ.\nસંપર્ક: 8849526589`;
+  const message = `નમસ્તે ${order.customerName},\n\n*${storeName} (${currentSettings.storeSubNameGu})*\nઓર્ડર નંબર: ${order.orderId}\nકુલ રકમ: ₹${order.totalAmount}\n\n${statusTextGu}\n\nપિકઅપ સરનામું: ${currentSettings.addressGu}\nસંપર્ક: ${contactNo}`;
 
   return `https://wa.me/${targetPhone}?text=${encodeURIComponent(message)}`;
 }

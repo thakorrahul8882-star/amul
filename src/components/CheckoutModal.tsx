@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useStoreSettings } from '../context/StoreSettingsContext';
 import { createOrder } from '../services/storeService';
-import { sendAutomaticWhatsAppNotification } from '../services/whatsappService';
+import {
+  sendAutomaticWhatsAppNotification,
+  getWhatsAppClickToChatLink,
+} from '../services/whatsappService';
 import {
   X,
   Store,
   AlertCircle,
   Phone,
   User,
-  CreditCard,
   FileText,
   CheckCircle2,
-  Lock,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -27,6 +29,7 @@ export const CheckoutModal: React.FC = () => {
     setLastPlacedOrder,
   } = useCart();
   const { language, t } = useLanguage();
+  const settings = useStoreSettings();
 
   const [customerName, setCustomerName] = useState('');
   const [customerMobile, setCustomerMobile] = useState('');
@@ -40,6 +43,15 @@ export const CheckoutModal: React.FC = () => {
   const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
+
+    if (!settings.isOpen) {
+      setErrorMessage(
+        language === 'gu'
+          ? 'પાર્લર હાલ ઓનલાઈન ઓર્ડર માટે બંધ છે.'
+          : 'Parlour is currently closed for online orders.'
+      );
+      return;
+    }
 
     const trimmedName = customerName.trim();
     const cleanMobile = customerMobile.replace(/\D/g, '');
@@ -75,21 +87,29 @@ export const CheckoutModal: React.FC = () => {
         orderNotes: orderNotes.trim(),
       });
 
-      // 2. Dispatch automatic WhatsApp notification to shop owner (8849526589)
+      // 2. Dispatch automatic WhatsApp notification to backend service
       try {
         await sendAutomaticWhatsAppNotification(newOrder);
       } catch (waErr) {
         console.warn('Automatic WhatsApp trigger completed with notice:', waErr);
       }
 
-      // 3. Trigger celebratory confetti
+      // 3. Immediately launch WhatsApp to parlour owner with full drafted receipt
+      try {
+        const waUrl = getWhatsAppClickToChatLink(newOrder);
+        window.open(waUrl, '_blank');
+      } catch (openErr) {
+        console.warn('Auto WhatsApp popup notice:', openErr);
+      }
+
+      // 4. Trigger celebratory confetti
       confetti({
         particleCount: 80,
         spread: 70,
         origin: { y: 0.6 },
       });
 
-      // 4. Update state and open success modal
+      // 5. Update state and open success modal
       setLastPlacedOrder(newOrder);
       clearCart();
       setIsCheckoutOpen(false);
@@ -124,7 +144,9 @@ export const CheckoutModal: React.FC = () => {
                   {t('checkoutTitle')}
                 </h3>
                 <p className="text-xs text-red-100">
-                  {language === 'gu' ? 'અમૂલ પાર્લર ખોડાણા (દૂધ મંડળી)' : 'Amul Parlour Khodana (Milk Society)'}
+                  {language === 'gu'
+                    ? `${settings.storeNameGu} (${settings.storeSubNameGu})`
+                    : `${settings.storeNameEn} (${settings.storeSubNameEn})`}
                 </p>
               </div>
             </div>
@@ -143,7 +165,7 @@ export const CheckoutModal: React.FC = () => {
             <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div className="text-xs text-red-900 leading-relaxed">
               <span className="font-bold underline decoration-red-400">
-                {t('pickupOnlyNotice')}
+                {language === 'gu' ? settings.pickupNoticeGu : settings.pickupNoticeEn}
               </span>
               <p className="text-[11px] text-red-700 font-medium mt-1">
                 {language === 'gu'
@@ -299,7 +321,7 @@ export const CheckoutModal: React.FC = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || !settings.isOpen}
               className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:opacity-50 text-white font-extrabold py-3.5 px-4 rounded-2xl shadow-lg shadow-red-200 transition-all active:scale-98"
             >
               {loading ? (
